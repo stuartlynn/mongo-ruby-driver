@@ -540,8 +540,10 @@ module Mongo
     # and payload.
     # TODO: Not sure if this should take a block.
     def instrument(name, payload = {}, &blk)
+      ts  = Time.now
       res = yield
-      log_operation(name, payload)
+      te  = Time.now
+      log_operation(name, payload, te-ts)
       res
     end
 
@@ -605,13 +607,14 @@ module Mongo
 
     ## Logging methods
 
-    def log_operation(name, payload)
+    def log_operation(name, payload,time=nil)
       return unless @logger
       msg = "#{payload[:database]}['#{payload[:collection]}'].#{name}("
       msg += payload.values_at(:selector, :document, :documents, :fields ).compact.map(&:inspect).join(', ') + ")"
       msg += ".skip(#{payload[:skip]})"  if payload[:skip]
       msg += ".limit(#{payload[:limit]})"  if payload[:limit]
       msg += ".sort(#{payload[:sort]})"  if payload[:sort]
+      msg += "(#{time} ms)" if time 
       @logger.debug "MONGODB #{msg}"
     end
 
